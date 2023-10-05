@@ -46,7 +46,16 @@ func TestCustomIssueTrackerService(t *testing.T) {
 
 	mux.HandleFunc("/api/v4/projects/1/services/custom-issue-tracker", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"id": 1, "title": "5", "push_events": true, "properties": {"new_issue_url":"1", "issues_url": "2", "project_url": "3"}}`)
+		fmt.Fprint(w, `{
+      "id": 1,
+      "title": "5",
+      "push_events": true,
+      "properties": {
+        "new_issue_url": "1",
+        "issues_url": "2",
+        "project_url": "3"
+      }
+    }`)
 	})
 	want := &CustomIssueTrackerService{
 		Service: Service{
@@ -102,6 +111,81 @@ func TestDeleteCustomIssueTrackerService(t *testing.T) {
 	_, err := client.Services.DeleteCustomIssueTrackerService(1)
 	if err != nil {
 		t.Fatalf("Services.DeleteCustomIssueTrackerService returns an error: %v", err)
+	}
+}
+
+func TestGetDataDogService(t *testing.T) {
+	mux, client := setup(t)
+
+	mux.HandleFunc("/api/v4/projects/1/services/datadog", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{
+      "id": 1,
+      "active": true,
+      "properties": {
+        "api_url": "",
+        "datadog_env": "production",
+        "datadog_service": "gitlab",
+        "datadog_site": "datadoghq.com",
+        "datadog_tags": "country=canada\nprovince=ontario",
+        "archive_trace_events": true
+      }
+    }`)
+	})
+	want := &DataDogService{
+		Service: Service{ID: 1, Active: true},
+		Properties: &DataDogServiceProperties{
+			APIURL:             "",
+			DataDogEnv:         "production",
+			DataDogService:     "gitlab",
+			DataDogSite:        "datadoghq.com",
+			DataDogTags:        "country=canada\nprovince=ontario",
+			ArchiveTraceEvents: true,
+		},
+	}
+
+	service, _, err := client.Services.GetDataDogService(1)
+	if err != nil {
+		t.Fatalf("Services.GetDataDogService returns an error: %v", err)
+	}
+	if !reflect.DeepEqual(want, service) {
+		t.Errorf("Services.GetDataDogService returned %+v, want %+v", service, want)
+	}
+}
+
+func TestSetDataDogService(t *testing.T) {
+	mux, client := setup(t)
+
+	mux.HandleFunc("/api/v4/projects/1/services/datadog", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+	})
+
+	opt := &SetDataDogServiceOptions{
+		APIKey:             String("secret"),
+		APIURL:             String("https://some-api.com"),
+		DataDogEnv:         String("sandbox"),
+		DataDogService:     String("source-code"),
+		DataDogSite:        String("datadoghq.eu"),
+		DataDogTags:        String("country=france"),
+		ArchiveTraceEvents: Bool(false),
+	}
+
+	_, err := client.Services.SetDataDogService(1, opt)
+	if err != nil {
+		t.Fatalf("Services.SetDataDogService returns an error: %v", err)
+	}
+}
+
+func TestDeleteDataDogService(t *testing.T) {
+	mux, client := setup(t)
+
+	mux.HandleFunc("/api/v4/projects/1/services/datadog", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+	})
+
+	_, err := client.Services.DeleteDataDogService(1)
+	if err != nil {
+		t.Fatalf("Services.DeleteDataDogService returns an error: %v", err)
 	}
 }
 
